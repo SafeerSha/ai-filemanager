@@ -1,6 +1,8 @@
 import axios from 'axios';
 
-const API_BASE_URL = 'https://localhost:7188/api/NewItems';
+const API_BASE_URL = process.env.NODE_ENV === 'production'
+  ? 'https://ai-filemanager-api.onrender.com/api/NewItems'
+  : 'https://localhost:7188/api/NewItems';
 
 export const apiService = {
   // Get all drives
