@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { Home as HomeIcon, Folder, Star, Trash2, File, FileImage, FileVideo, FileAudio, FileText, Upload, Plus, Settings, Search, Sparkles, Mic, Menu, X } from 'lucide-react';
 import jsPDF from 'jspdf';
 import Link from 'next/link';
-import { callAI } from '../../lib/aiService';
+import { createHandleSubmit } from '../../lib/fileActions';
 
 type FileItem = {
   name: string;
@@ -62,28 +62,7 @@ export default function Folders() {
     localStorage.setItem('ai-files', JSON.stringify(files));
   }, [files]);
 
-  const handleSubmit = async (e: any) => {
-    e.preventDefault();
-    const trimmedPrompt = prompt.trim();
-    const aiResponse = await callAI(trimmedPrompt);
-    debugger;
-    if (aiResponse.action === 'create_pdf') {
-      setFiles(prev => [...prev, { name: aiResponse.name || 'Unnamed.pdf', type: 'pdf', size: '1 KB', path: currentPath }]);
-    } else if (aiResponse.action === 'create_txt') {
-      setFiles(prev => [...prev, { name: aiResponse.name || 'Unnamed.txt', type: 'text', size: '1 KB', path: currentPath }]);
-    } else if (aiResponse.action === 'create_image') {
-      setFiles(prev => [...prev, { name: aiResponse.name || 'Unnamed.jpg', type: 'image', size: '1 KB', path: currentPath }]);
-    } else if (aiResponse.action === 'create_video') {
-      setFiles(prev => [...prev, { name: aiResponse.name || 'Unnamed.mp4', type: 'video', size: '1 KB', path: currentPath }]);
-    } else if (aiResponse.action === 'create_audio') {
-      setFiles(prev => [...prev, { name: aiResponse.name || 'Unnamed.mp3', type: 'audio', size: '1 KB', path: currentPath }]);
-    } else if (aiResponse.action === 'delete_file') {
-      setFiles(prev => prev.filter(file => file.name !== aiResponse.name && file.path === currentPath));
-    } else if (aiResponse.action === 'create_folder') {
-      setFiles(prev => [...prev, { name: aiResponse.name || 'New Folder', type: 'folder', size: 'Folder', path: currentPath }]);
-    }
-    setPrompt('');
-  };
+  const handleSubmit = createHandleSubmit(setFiles, setPrompt, currentPath);
 
   const handleContextMenu = (e: React.MouseEvent, file: FileItem) => {
     e.preventDefault();
@@ -132,7 +111,7 @@ export default function Folders() {
       const transcript = event.results[0][0].transcript;
       setPrompt(transcript);
       // Automatically submit the voice prompt
-      await handleSubmit({ preventDefault: () => {} } as any);
+      await handleSubmit({ preventDefault: () => {} } as any, transcript);
     };
 
     recognition.onend = () => {
@@ -254,7 +233,7 @@ export default function Folders() {
         )}
 
         {/* Floating Prompt Input */}
-        <form onSubmit={handleSubmit} className="fixed bottom-4 left-1/2 transform -translate-x-1/2 bg-white/10 backdrop-blur-md border border-white/20 p-4 rounded-2xl shadow-2xl flex items-center space-x-2 w-96 max-w-[90vw]">
+        <form onSubmit={(e) => handleSubmit(e, prompt)} className="fixed bottom-4 left-1/2 transform -translate-x-1/2 bg-white/10 backdrop-blur-md border border-white/20 p-4 rounded-2xl shadow-2xl flex items-center space-x-2 w-96 max-w-[90vw]">
           <input
             type="text"
             value={prompt}
